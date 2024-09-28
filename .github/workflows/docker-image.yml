@@ -32,28 +32,34 @@ jobs:
         run: |
           git fetch --tags
           # Get the latest tag if any
-          latest_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "1.0.0")
-          
-          # Extract the components of the latest tag
-          major=$(echo $latest_tag | cut -d '.' -f1)
-          minor=$(echo $latest_tag | cut -d '.' -f2)
-          patch=$(echo $latest_tag | cut -d '.' -f3)
+          latest_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
 
-          # Increment the PATCH version by default
-          patch=$((patch + 1))
+          if [ -z "$latest_tag" ]; then
+            # No tags exist, start with version 1.0.0
+            new_version="1.0.0"
+          else
+            # Extract the components of the latest tag
+            major=$(echo $latest_tag | cut -d '.' -f1)
+            minor=$(echo $latest_tag | cut -d '.' -f2)
+            patch=$(echo $latest_tag | cut -d '.' -f3)
 
-          # Determine if this is a minor or major change by checking commit messages
-          commit_message=$(git log -1 --pretty=%B)
-          if [[ "$commit_message" == *"#major"* ]]; then
-            major=$((major + 1))
-            minor=0
-            patch=0
-          elif [[ "$commit_message" == *"#minor"* ]]; then
-            minor=$((minor + 1))
-            patch=0
+            # Increment the PATCH version by default
+            patch=$((patch + 1))
+
+            # Determine if this is a minor or major change by checking commit messages
+            commit_message=$(git log -1 --pretty=%B)
+            if [[ "$commit_message" == *"#major"* ]]; then
+              major=$((major + 1))
+              minor=0
+              patch=0
+            elif [[ "$commit_message" == *"#minor"* ]]; then
+              minor=$((minor + 1))
+              patch=0
+            fi
+
+            new_version="$major.$minor.$patch"
           fi
-
-          new_version="$major.$minor.$patch"
+          
           echo "new_version=$new_version" >> $GITHUB_ENV
           echo "The new version is: $new_version"
 
@@ -63,5 +69,5 @@ jobs:
         with:
           push: true
           tags: |
-            ebruskokos/e-store:${{ env.new_version }}   # Version tag
-            ebruskokos/e-store:latest                   # Latest tag
+            ebruskokos/e-store:${{ env.new_version }}
+            ebruskokos/e-store:latest
