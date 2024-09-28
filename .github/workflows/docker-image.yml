@@ -61,4 +61,4 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           push: true
-          tags: ebrustokos/e-store:${{ env.Version }}
+          tags: ebruskokos/e-store:${{ env.Version }}
