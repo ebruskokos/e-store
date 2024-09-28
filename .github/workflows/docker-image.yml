@@ -18,7 +18,7 @@ jobs:
         uses: docker/login-action@v3
         with:
           username: "ebruskokos"       # Hardcoded username
-          password: "73ybdsbhdfb dbs"  # Hardcoded token
+          password: "dckr_pat_7mpDbFVqDk8R4oPLcrBRfedOj64"  # Hardcoded token
       -
         name: Get the latest tag
         id: get_tag
