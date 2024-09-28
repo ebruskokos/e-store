@@ -61,4 +61,6 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           push: true
-          tags: ebruskokos/e-store:${{ env.Version }}
+          tags: |
+            ebruskokos/e-store:${{ env.Version }}   # Tag with the version number (e.g., 1.1.0)
+            ebruskokos/e-store:latest              # Tag as "latest"
