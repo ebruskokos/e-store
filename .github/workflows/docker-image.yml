@@ -31,35 +31,47 @@ jobs:
         id: get_version
         run: |
           git fetch --tags
-          # Get the latest tag if any
-          latest_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-
+          
+          # Start checking from 1.0.0 if no tags exist
+          latest_tag=$(git tag --list --sort=-v:refname | head -n 1)
           if [ -z "$latest_tag" ]; then
-            # No tags exist, start with version 1.0.0
-            new_version="1.0.0"
+            major=1
+            minor=0
+            patch=0
           else
-            # Extract the components of the latest tag
             major=$(echo $latest_tag | cut -d '.' -f1)
             minor=$(echo $latest_tag | cut -d '.' -f2)
             patch=$(echo $latest_tag | cut -d '.' -f3)
-
-            # Increment the PATCH version by default
-            patch=$((patch + 1))
-
-            # Determine if this is a minor or major change by checking commit messages
-            commit_message=$(git log -1 --pretty=%B)
-            if [[ "$commit_message" == *"#major"* ]]; then
-              major=$((major + 1))
-              minor=0
+            
+            # Check if patch is less than 12, then increment
+            if [ "$patch" -lt 12 ]; then
+              patch=$((patch + 1))
+            else
               patch=0
-            elif [[ "$commit_message" == *"#minor"* ]]; then
               minor=$((minor + 1))
-              patch=0
             fi
-
-            new_version="$major.$minor.$patch"
           fi
+
+          # Check for existing images on Docker Hub before using the new version
+          new_version="$major.$minor.$patch"
           
+          while true; do
+            # Attempt to pull the image with this tag to check if it already exists
+            if docker pull ebruskokos/e-store:"$new_version" > /dev/null 2>&1; then
+              # If the image exists, increment the patch number
+              if [ "$patch" -lt 12 ]; then
+                patch=$((patch + 1))
+              else
+                patch=0
+                minor=$((minor + 1))
+              fi
+              new_version="$major.$minor.$patch"
+            else
+              # If the image does not exist, this is the version to use
+              break
+            fi
+          done
+
           echo "new_version=$new_version" >> $GITHUB_ENV
           echo "The new version is: $new_version"
 
