@@ -8,23 +8,33 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       -
+        name: Check out the code
+        uses: actions/checkout@v3   # This step checks out your repository
+
+      -
         name: Set up QEMU
         uses: docker/setup-qemu-action@v3
+
       -
         name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+
       -
         name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: "ebruskokos"       # Hardcoded username
-          password: "dckr_pat_7mpDbFVqDk8R4oPLcrBRfedOj64"  # Hardcoded token
+          password: "dckr_pat_zZazXM6Z6BIEaQTO9VS-6Y4zxP8"  # Hardcoded token
+
       -
         name: Get the latest tag
         id: get_tag
         run: |
           git fetch --tags
+          # Get the latest tag, if any
           latest_tag=$(git tag --list --sort=-v:refname | head -n 1)
+          
+          # If no tags exist, set the version to 1.1.0
           if [ -z "$latest_tag" ]; then
             echo "1.1.0" > .version
           else
@@ -42,7 +52,10 @@ jobs:
             
             echo "$major.$minor.0" > .version
           fi
+          
           echo "Version=$(cat .version)" >> $GITHUB_ENV
+          echo "The current build version is: $(cat .version)"
+
       -
         name: Build and push
         uses: docker/build-push-action@v6
