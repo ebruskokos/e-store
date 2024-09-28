@@ -27,34 +27,35 @@ jobs:
           password: "dckr_pat_zZazXM6Z6BIEaQTO9VS-6Y4zxP8"  # Hardcoded token
 
       -
-        name: Get the latest tag
-        id: get_tag
+        name: Determine version using Semantic Versioning
+        id: get_version
         run: |
           git fetch --tags
-          # Get the latest tag, if any
-          latest_tag=$(git tag --list --sort=-v:refname | head -n 1)
+          # Get the latest tag if any
+          latest_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "1.0.0")
           
-          # If no tags exist, set the version to 1.1.0
-          if [ -z "$latest_tag" ]; then
-            echo "1.1.0" > .version
-          else
-            major=$(echo $latest_tag | cut -d '.' -f1)
-            minor=$(echo $latest_tag | cut -d '.' -f2)
-            patch=$(echo $latest_tag | cut -d '.' -f3)
-            
-            # Increment the minor version until it reaches 12
-            if [ "$minor" -lt 12 ]; then
-              minor=$((minor + 1))
-            else
-              minor=1
-              major=$((major + 1))
-            fi
-            
-            echo "$major.$minor.0" > .version
+          # Extract the components of the latest tag
+          major=$(echo $latest_tag | cut -d '.' -f1)
+          minor=$(echo $latest_tag | cut -d '.' -f2)
+          patch=$(echo $latest_tag | cut -d '.' -f3)
+
+          # Increment the PATCH version by default
+          patch=$((patch + 1))
+
+          # Determine if this is a minor or major change by checking commit messages
+          commit_message=$(git log -1 --pretty=%B)
+          if [[ "$commit_message" == *"#major"* ]]; then
+            major=$((major + 1))
+            minor=0
+            patch=0
+          elif [[ "$commit_message" == *"#minor"* ]]; then
+            minor=$((minor + 1))
+            patch=0
           fi
-          
-          echo "Version=$(cat .version)" >> $GITHUB_ENV
-          echo "The current build version is: $(cat .version)"
+
+          new_version="$major.$minor.$patch"
+          echo "new_version=$new_version" >> $GITHUB_ENV
+          echo "The new version is: $new_version"
 
       -
         name: Build and push
@@ -62,5 +63,5 @@ jobs:
         with:
           push: true
           tags: |
-            ebruskokos/e-store:${{ env.Version }}   # Tag with the version number (e.g., 1.1.0)
-            ebruskokos/e-store:latest              # Tag as "latest"
+            ebruskokos/e-store:${{ env.new_version }}   # Tag with the semantic version (e.g., 1.1.0)
+            ebruskokos/e-store:latest                   # Tag as "latest"
