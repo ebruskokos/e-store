@@ -44,7 +44,7 @@ jobs:
             patch=$(echo $latest_tag | cut -d '.' -f3)
             
             # Check if patch is less than 12, then increment
-            if [ "$patch" -lt 12 ]; then
+            if [ "$patch" -lt 500 ]; then
               patch=$((patch + 1))
             else
               patch=0
